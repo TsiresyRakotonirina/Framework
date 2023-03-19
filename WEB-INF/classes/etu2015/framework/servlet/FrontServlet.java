@@ -16,6 +16,27 @@ import jakarta.servlet.http.*;
 public class FrontServlet extends HttpServlet {
 
     Map<String, Mapping> mappingUrls;
+
+    public void init() throws ServletException {
+        try {
+            mappingUrls = new HashMap<String, Mapping>();
+            String packageName = "etu2015.model";
+            URL root = Thread.currentThread().getContextClassLoader().getResource(packageName.replace(".", "/"));
+            for (File file : new File(root.getFile()).listFiles()) {
+                if (file.getName().contains(".class")) {
+                    String className = file.getName().replaceAll(".class$", "");
+                    Class<?> cls = Class.forName(packageName + "." + className);
+                    for (Method method : cls.getDeclaredMethods()) {
+                        if (method.isAnnotationPresent(url.class)) {
+                            mappingUrls.put(method.getAnnotation(url.class).value(), new Mapping(cls.getName(), method.getName()));
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new ServletException(e);
+        }
+    }
     
     public void processRequest(HttpServletRequest request, HttpServletResponse response)
         throws IOException, ServletException {
