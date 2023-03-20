@@ -1,5 +1,7 @@
 package etu2015.model;
 
+import etu2015.annotation.*;
+
 public class Olona {
 
     int id;
@@ -30,6 +32,11 @@ public class Olona {
     public Olona(int id, String anarana) {
         setId(id);
         setanarana(anarana);
+    }
+
+    @url("mamerina-olona")
+    public Olona mitadyOlona(int id){
+        return new Olona(id,"anarana");
     }
 
 }
