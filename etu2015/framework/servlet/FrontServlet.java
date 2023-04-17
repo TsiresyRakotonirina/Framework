@@ -8,6 +8,7 @@ import java.util.Map;
 
 import etu2015.framework.annotation.url;
 import etu2015.framework.Mapping;
+import etu2015.framework.ModelView;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -40,11 +41,67 @@ public class FrontServlet extends HttpServlet {
     
     public void processRequest(HttpServletRequest request, HttpServletResponse response)
         throws IOException, ServletException {
-        PrintWriter out = response.getWriter();
-        out.println(request.getHttpServletMapping().getMatchValue());
-        for (Map.Entry<String, Mapping> entry : mappingUrls.entrySet()) {
-            out.println(entry.getKey() + " " + entry.getValue().getClassName() + " " + entry.getValue().getMethod());
-        }
+            response.setContentType("text/html;charset=UTF-8");
+            try (PrintWriter out = response.getWriter()) {
+    
+    
+                String packageName = getServletContext().getInitParameter("packageName");
+                URL root = Thread.currentThread().getContextClassLoader().getResource(packageName.replace(".", "//")); 
+    
+                /* TODO output your page here. You may use following sample code. */
+                out.println("<strong>MappingUrls(size): </strong> = " + mappingUrls.size() +" ,<br>");
+                out.println("<strong>Root</strong> = " + root +",<br>");
+    
+                String stringUri = request.getRequestURI();
+                String[] arrayPath = stringUri.split("/");
+                String cle = arrayPath[arrayPath.length - 1];
+                
+                out.println("<strong>URL</strong> = " + stringUri);
+                out.println("<br>");
+                out.println("<strong>Method</strong> = " + request.getMethod().toString());
+                out.println("<br>");
+    
+                out.println("<strong>Cle: </strong>"+cle+"<br>");
+                for(String key : mappingUrls.keySet()){
+                    Mapping mapping = mappingUrls.get(key);
+                    out.println("<strong>Cle:</strong> " + key + ", <strong>ClassName:</strong> "+ mapping.getClassName() + ", <strong>Mapping:</strong> " + mapping.getMethod());
+                    out.println("<br>");
+                }
+                
+    
+                String nomMethode = cle;
+                try {
+                
+    
+                String nomDeClasse = (String) mappingUrls.get(nomMethode).getClassName();
+                java.lang.Class cl = java.lang.Class.forName(nomDeClasse);
+                Object object = cl.newInstance();
+                String method = (String) mappingUrls.get(nomMethode).getMethod();
+                Method methode = object.getClass().getDeclaredMethod(method);
+                Object retour = (ModelView) methode.invoke(object);
+        ///Model view
+                ModelView mv_retour = (ModelView) retour;
+                out.println(mv_retour.getView());
+                RequestDispatcher requestDispatcher = request.getRequestDispatcher("/"+mv_retour.getView());
+                out.println("<br><strong>Page: </strong>"+mv_retour.getView());
+    
+        ///HashMap
+                HashMap<String,Object> data = mv_retour.getData();
+                for(Map.Entry<String, Object> entry: data.entrySet()){
+                    request.setAttribute(entry.getKey(), entry.getValue());
+                }
+                
+                
+                requestDispatcher.forward(request,response);
+                } catch (Exception e) {
+                    //TODO: handle exception
+                    out.println("<br>Error message: "+e.getMessage());
+                    e.printStackTrace(out);
+                    
+                }
+    
+    
+            }
     }
 
     public void doPost(HttpServletRequest request, HttpServletResponse response)
